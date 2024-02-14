@@ -1,0 +1,276 @@
+--********************** №1 **********************--
+
+select current_date as "Date"
+
+--********************** №2 **********************--
+
+select employee_id
+,first_name
+,last_name
+, salary
+,round(salary + salary/100*15.5) as "New Salary"
+from employees
+
+--********************** №3 **********************--
+
+select employee_id
+,first_name
+,last_name
+, salary
+,round(salary + salary/100*15.5) as "New Salary"
+,round(salary + salary/100*15.5)-round(salary) as Increase
+from employees
+
+
+--********************** №4 **********************--
+
+select 
+initcap(last_name)  as "Name"
+,length(last_name) as "Length"
+from employees
+where last_name like 'J%' or last_name like 'A%' or last_name like 'M%'
+order by 2
+
+
+--********************** №5 **********************--
+create or replace function get_lenght_surname (
+  p_char varchar
+) 
+	returns table (
+		surname varchar,
+		len_surname int
+	) 
+	language plpgsql
+as $$
+begin
+	return query 
+		select last_name
+             , length(last_name)::integer
+          from employees
+         where position(lower(p_char) in lower(last_name)) = 1;
+end;$$
+
+
+SELECT * 
+FROM get_lenght_surname ('o');
+
+
+
+
+--********************** №6 **********************--
+select 
+last_name
+, extract(year from age(current_date, hire_date)) * 12 + extract(month from age(current_date, hire_date)) as mon
+from employees
+
+
+--********************** №7 **********************--
+select last_name
+     , lpad(cast(cast(salary as int) as varchar(50)), 15, '$')
+from employees
+
+
+--********************** №8 **********************--
+SELECT RPAD(last_name, 8)||RPAD('', cast(salary/100 as int), '*') as EMLOYEES_AND_THEID_SALARIES
+FROM employees
+ORDER BY salary DESC
+
+
+--********************** №9 **********************--
+
+select last_name
+     , round((current_date - hire_date) / 7.0 ) as TENSURE
+	-- , (current_date - hire_date) / 7 ) as TENSURE  (можно и без округления, бд сама округляет, если делить на целое число 7)
+from employees
+where department_id = 90
+order by TENSURE desc
+
+
+--********************** №10 **********************--	  
+select last_name || ' зарабатывает ' || salary || ' каждый месяц, но хочет получать ' || salary * 3 as "Dream Salaries"
+from employees
+
+
+--********************** №11 **********************--
+select last_name
+     , hire_date
+	 , to_char(date_trunc('week', (hire_date + interval '6 month') + interval '6 days') , 'fmDay, "the" DDSP "of" Month, YYYY') REVIEW
+from employees
+
+не смогла вывести дату в тектсовом виде, так как не нашла как это сделать, в документации описано что данный функционал не реализован
+https://www.postgresql.org/docs/current/functions-formatting.html
+"SP suffix   	spell mode (not implemented) 	DDSP"
+
+
+
+--********************** №12 **********************--
+select LAST_NAME
+     , coalesce(CAST(commission_pct as VARCHAR(20)), 'No Comission') as  COMM 
+from employees
+
+
+--********************** №13 **********************--
+
+select  
+ l.location_id
+,l.street_address
+,l.city
+,l.state_province
+,c.country_name
+from locations l
+join countries c on c.country_id=l.country_id
+
+
+
+
+--********************** №14 **********************--
+
+select 
+e.last_name
+,d.department_id
+,department_name
+from employees e
+join departments d on d.department_id = e.department_id
+
+
+
+--********************** №15 **********************--
+
+select 
+e.last_name
+,j.job_id
+,d.department_id
+,department_name
+from employees e
+join departments d on d.department_id = e.department_id
+join jobs j on e.job_id=j.job_id
+join locations l on l.location_id=d.location_id
+where l.city= 'Toronto'
+
+--********************** №16 **********************--
+
+select 
+ e.last_name    "Employee"
+,e.employee_id  "Emp#"
+,em.last_name   "Manager"
+,em.employee_id "Mgr#"
+from employees e
+join employees em on e.manager_id=em.employee_id
+
+
+--********************** №17 **********************--
+
+select 
+ e.last_name    "Employee"
+,e.employee_id  "Emp#"
+,em.last_name   "Manager"
+,em.employee_id "Mgr#"
+from employees e
+left join employees em on e.manager_id=em.employee_id
+
+
+--********************** №18 **********************--
+select e1.department_id as DEPARTMENT
+     , e1.last_name     as EMPLOYEE
+	 , e2.сolleagues    as COLLEAGUE
+from employees e1
+left join (select department_id
+           , STRING_AGG (last_name,', ') as сolleagues
+        from employees e2
+       group by department_id ) as e2 on e1.department_id = e2.department_id
+
+
+--********************** №19 **********************--
+select last_name
+     , hire_date
+  from employees
+ where hire_date > ALL ( select hire_date 
+                       from employees
+                      where first_name = 'David' )
+
+
+--********************** №20 **********************--
+select e.last_name   
+     , e.hire_date
+	 , em.last_name 
+     , em.hire_date
+  from employees e
+  join employees em on e.manager_id = em.employee_id
+                   and e.hire_date  < em.hire_date
+
+--***********************№22***********************--
+					   
+select employee_id
+      ,last_name
+	  ,salary
+from employees
+where salary > (select avg(salary)
+                        from employees)
+order by salary
+
+
+--********************** №23 **********************--
+
+select e1.employee_id
+     --, e1.last_name
+	 --, e1.department_id
+	 , e2.сolleagues
+from employees e1
+join (select department_id
+           , STRING_AGG (last_name,', ') as сolleagues
+        from employees e2
+       group by department_id ) as e2 on e1.department_id = e2.department_id
+where position('u' in lower(e1.last_name)) > 0
+
+
+--********************** №24 **********************--
+select e.last_name
+     , department_id
+     , e.job_id 
+from employees e
+where department_id in ( select department_id 
+                        from departments
+                       where location_id = 1700)
+
+
+--********************** №25 **********************--
+select e.last_name
+     , e.salary 
+from employees e
+where manager_id in ( select employee_id 
+					    from employees 
+					   where last_name = 'King')
+
+
+
+--********************** №26 **********************--
+
+select
+ e.department_id
+,e.last_name
+,e.job_id
+from employees e
+where  department_id in
+(select department_id
+	    from departments
+        where department_name='Executive')
+		
+
+--********************** №27 **********************--
+
+select Last_name
+from employees
+where  salary > any (select salary
+                       from employees
+                      where department_id=60)
+
+
+--********************** №28 **********************--
+select employee_id
+     , last_name
+     , salary
+  from employees 
+ where department_id in (select  department_id 
+                           from employees
+                          where position('u' in lower(last_name)) > 0)
+   and salary >	(select avg(salary) from employees )	

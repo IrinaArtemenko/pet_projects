@@ -1,0 +1,120 @@
+CREATE SCHEMA DDS;
+CREATE SCHEMA LOGS;
+
+create table LOGS.T_LOGS_DOWNLOAD
+(
+ load_dtm        TIMESTAMP not null
+,target_table    VARCHAR(50)
+,action          VARCHAR(50)
+);
+
+
+create table DDS.FT_BALANCE_F
+(
+ on_date       DATE not null
+,account_rk    NUMERIC not null
+,currency_rk   NUMERIC
+,balance_out   FLOAT
+,constraint date_account_pk primary key(on_date,account_rk)
+);
+
+create table DDS.FT_POSTING_F
+(
+ oper_date          DATE    not null
+,credit_account_rk  NUMERIC not null
+,debet_account_rk   NUMERIC not null
+,credit_amount      FLOAT
+,debet_amount       FLOAT
+);
+
+create table DDS.MD_ACCOUNT_D
+(
+ data_actual_date       DATE not null
+,data_actual_end_date   DATE not null
+,account_rk             NUMERIC not null
+,account_number         VARCHAR(100) not null    
+,char_type              VARCHAR(1) not null
+,currency_rk            NUMERIC null
+,currency_code          VARCHAR(3) not null
+,constraint data_account_pk primary key(data_actual_date,account_rk)
+);
+
+create table DDS.MD_CURRENCY_D
+(
+ currency_rk            NUMERIC not null
+,data_actual_date       DATE not null
+,data_actual_end_date   DATE
+,currency_code          VARCHAR(3)
+,code_iso_char          VARCHAR(3)
+,constraint currency_actual_pk primary key(currency_rk,data_actual_date)
+);
+
+create table DDS.MD_EXCHANGE_RATE_D
+(
+ data_actual_date      DATE not null
+,data_actual_end_date  DATE
+,currency_rk           NUMERIC not null
+,reduced_cource        FLOAT
+,code_iso_num          VARCHAR(3)
+);
+
+create table DDS.MD_LEDGER_ACCOUNT_S
+(
+ chapter                           CHAR(1)
+,chapter_name                      VARCHAR(16)
+,section_number                    INTEGER
+,section_name                      VARCHAR(22)
+,subsection_name                   VARCHAR(21)
+,ledger1_account                   INTEGER
+,ledger1_account_name              VARCHAR(47)
+,ledger_account                    INTEGER not null    
+,ledger_account_name               VARCHAR(153)
+,characteristic                    CHAR(1)
+,is_resident                       INTEGER
+,is_reserve                        INTEGER
+,is_reserved                       INTEGER
+,is_loan                           INTEGER
+,is_reserved_assets                INTEGER
+,is_overdue                        INTEGER
+,is_interest                       INTEGER
+,pair_account                      VARCHAR(5)
+,start_date                        DATE not null
+,end_date                          DATE
+,is_rub_only                       INTEGER
+,min_term                          VARCHAR(1)
+,min_term_measure                  VARCHAR(1)
+,max_term                          VARCHAR(1)
+,max_term_measure                  VARCHAR(1)
+,ledger_acc_full_name_translit     VARCHAR(1)
+,is_revaluation                    VARCHAR(1)
+,is_correct                        VARCHAR(1)
+,constraint ledger_start_pk primary key(ledger_account,start_date)
+);
+
+
+--zzzzzzzzzzzzzzzzzzzzzzzzzzz test ETL zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+--truncate table logs.t_logs_download; 
+
+select * 
+from logs.t_logs_download
+order by load_dtm; 
+
+select * from dds.ft_balance_f;
+select * from dds.ft_posting_f;
+select * from dds.md_account_d;
+select * from dds.md_currency_d;
+select * from dds.md_exchange_rate_d;
+select * from dds.md_ledger_account_s;
+
+truncate table dds.ft_balance_f;
+truncate table dds.ft_posting_f;
+truncate table dds.md_account_d;
+truncate table dds.md_currency_d;
+truncate table dds.md_exchange_rate_d;
+truncate table dds.md_ledger_account_s;
+
+select * 
+from dds.ft_balance_f
+where account_rk = 24656;
+

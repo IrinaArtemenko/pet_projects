@@ -1,0 +1,93 @@
+beeline
+!connect jdbc:hive2://adhcluster1.neoflex.ru:10000/ sbb_student_19 R~kuVLeX
+
+
+--Создайте таблицу в hive с указанной выше структурой:
+CREATE TABLE sbb_student_19.tab_dz 
+ ( id bigint
+ , col1 string 
+ , col2 string 
+ , col3 string )
+PARTITIONED BY (p int)
+STORED AS PARQUET;
+
+
+--Создайте тестовые данные в таблице:
+INSERT INTO sbb_student_19.tab_dz 
+select id, col1, col2, col3, case when id between 1 and 100   then 1 
+                                  when id between 101 and 200 then 2  
+                                  when id between 201 and 300 then 3 
+                                  when id between 301 and 400 then 4 else 5 end as p from (
+WITH
+gnrt as (
+SELECT   case when RAND() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else CHR(48 + FLOOR(rand() * 9)) end  AS rslt
+        ,case when RAND() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else CHR(48 + FLOOR(rand() * 9)) end  AS rslt1
+        ,case when RAND() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else CHR(48 + FLOOR(rand() * 9)) end  AS rslt2  , n
+FROM (
+SELECT posexplode(split(space(500), ' ')) AS (n, d)
+) t)
+select ROW_NUMBER() OVER () as id
+      ,concat(g1.rslt, g2.rslt, g3.rslt) as col1 
+      ,concat(g1.rslt1, g2.rslt1, g3.rslt1) as col2
+      ,concat(g1.rslt2, g2.rslt2, g3.rslt2) as col3   
+  from gnrt g1 join gnrt g2 on g1.n = g2.n join gnrt g3 on g2.n = g3.n) hh;
+
+--select * from sbb_student_19.tab_dz order by id ;
+
+SHOW PARTITIONS sbb_student_19.tab_dz;
+
++------------+
+| partition  |
++------------+
+| p=1        |
+| p=2        |
+| p=3        |
+| p=4        |
+| p=5        |
++------------+
+не получилось нагенерить 10,000 строк, hive крашился с ошибкой, по этому сделала 500 строк и разделила на 5 частей(для примера выполнения задания).
+
+
+--Сделайте несколько выборок:   
+select min(id) as min_id
+     , max(id) as max_id
+     , count(*) as cnt_str 
+     , p as part_num
+from sbb_student_19.tab_dz
+where p in (select p from sbb_student_19.tab_dz where concat(col1, col2, col3) regexp '^[0-9]*$' order by id)
+group by p;  
++---------+---------+----------+-----------+
+| min_id  | max_id  | cnt_str  | part_num  |
++---------+---------+----------+-----------+
+| 1       | 100     | 100      | 1         |
++---------+---------+----------+-----------+  
+  
+select min(id) as min_id
+     , max(id) as max_id
+     , count(*) as cnt_str 
+     , p as part_num
+from sbb_student_19.tab_dz
+where p in (select p from sbb_student_19.tab_dz where concat(col1, col2, col3) regexp '^[a-zA-Z]*$' order by id)
+group by p;  
++---------+---------+----------+-----------+
+| min_id  | max_id  | cnt_str  | part_num  |
++---------+---------+----------+-----------+
+| 101     | 200     | 100      | 2         |
+| 201     | 300     | 100      | 3         |
++---------+---------+----------+-----------+
+  
+
+--Удалите из таблицы поле col2:
+CREATE TABLE sbb_student_19.tab_dz_new 
+ ( id bigint
+ , col1 string 
+ , col3 string )
+PARTITIONED BY (p int)
+STORED AS PARQUET;
+
+INSERT INTO sbb_student_19.tab_dz_new 
+SELECT id, col1, col3, p FROM sbb_student_19.tab_dz;
+
+DROP TABLE sbb_student_19.tab_dz;
+
+ALTER TABLE sbb_student_19.tab_dz_new RENAME TO sbb_student_19.tab_dz;

@@ -1,0 +1,88 @@
+--*********** №1 ***********--
+select job_id 
+      ,count(*)
+from employees
+group by job_id 
+
+
+--*********** №2 ***********--
+select  count(distinct manager_id)
+from employees
+
+
+--*********** №3 ***********--
+select (max(salary)- min(salary)) as sal_dif
+from employees
+
+
+--*********** №4 ***********--
+select manager_id
+      ,min(salary)
+from employees
+group by manager_id
+
+
+--*********** №5 ***********--
+select department_id
+from employees
+except
+select department_id
+from employees
+where job_id = 'ST_CLERK'
+
+
+--*********** №6 ***********--
+select country_id 
+     , country_name
+  from countries
+where country_id in (select country_id 
+                       from countries
+                     except
+                     select l.country_id
+                       from locations l
+                       join departments d on d.location_id = l.location_id )
+
+
+--*********** №7 ***********--
+select job_id, department_id 
+from employees
+where department_id in (10)
+union all
+select job_id, department_id 
+from employees
+where department_id in (50)
+union all
+select job_id, department_id 
+from employees
+where department_id in (20)
+
+
+--*********** №8 ***********--
+select employee_id
+      ,job_id
+from employees
+intersect
+select employee_id
+      ,job_id
+from job_history
+
+
+--*********** №9 ***********--
+select last_name
+     , department_id 
+	 , 'Нет отдела' as department_name
+from employees
+where department_id is null
+union 
+select 'Нет сотрудников' as last_name
+     , department_id
+	 , department_name
+from departments
+where department_id in (
+                   select d.department_id
+                     from departments d
+                   except
+                   select department_id
+                     from employees e )
+
+
